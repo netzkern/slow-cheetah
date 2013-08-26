@@ -300,6 +300,7 @@ namespace SlowCheetah.VisualStudio
             return list.ToArray();
         }
 
+        private AddTransformsDialog currentAddTransformDlg; 
         /// <summary>
         /// This function is the callback used to execute a command when the a menu item is clicked.
         /// See the Initialize method to see how the menu item is associated to this function using
@@ -364,40 +365,105 @@ namespace SlowCheetah.VisualStudio
 
                 string itemFolder = Path.GetDirectoryName(itemFullPath);
                 string itemFilename = Path.GetFileNameWithoutExtension(itemFullPath);
-                string itemExtension = Path.GetExtension(itemFullPath);
 
-                string content = BuildXdtContent(itemFullPath);
+                // Load possible transforms
                 string[] configs = GetProjectConfigurations(selectedProjectItem.ContainingProject);
-
-                List<string> transformsToCreate = null;
-                if (configs != null) { transformsToCreate = configs.ToList(); }
-
-                if (transformsToCreate == null) { transformsToCreate = new List<string>(); }
+                List<string> possibleTransformsToCreate = null;
+                if (configs != null) { possibleTransformsToCreate = configs.ToList(); }
+                if (possibleTransformsToCreate == null) { possibleTransformsToCreate = new List<string>(); }
                 // if it is a web project we should add publish profile specific transforms as well
                 var publishProfileTransforms = this.GetPublishProfileTransforms(hierarchy, projectFullPath);
                 if (publishProfileTransforms != null) {
-                    transformsToCreate.AddRange(publishProfileTransforms);
+                    possibleTransformsToCreate.AddRange(publishProfileTransforms);
                 }
 
-                foreach (string config in transformsToCreate)
+                // Create the dialog instance without Help support. 
+                currentAddTransformDlg = new AddTransformsDialog(possibleTransformsToCreate);
+
+                // Show the dialog. 
+                currentAddTransformDlg.Show();
+
+                //Add all possible transforms
+                foreach (string possibleTransformToCreate in possibleTransformsToCreate)
                 {
-                    string itemName = string.Format(Resources.String_FormatTransformFilename, itemFilename, config, itemExtension);
-                    AddXdtTransformFile(selectedProjectItem, content, itemName, itemFolder);
-                    uint addedFileId;
-                    hierarchy.ParseCanonicalName(Path.Combine(itemFolder,itemName), out addedFileId);
-                    buildPropertyStorage.SetItemAttribute(addedFileId, IsTransformFile, "True");
+                    currentAddTransformDlg.AddPossibleTransform(possibleTransformToCreate);
                 }
 
-                if (addImports) {
-                    // AddSlowCheetahImport(projectFullPath, importPath);
-                    if (!this.InstallSlowCheetahNuGetPackage(selectedProjectItem.ContainingProject)) {
-                        // fall back for those who do not have Nuget installed
-                        AddSlowCheetahImport(projectFullPath, importPath);
-                    }
-                }    
+                //Add all supported extensions
+                currentAddTransformDlg.AddPossibleExtension(new FileExtension()
+                {
+                    DisplayName = "*.config",
+                    Name = "config",
+                    IsChecked = !isSitecoreProject(vsProject) || !isItemInIncludesFolder(itemFolder)
+                });
+                currentAddTransformDlg.AddPossibleExtension(new FileExtension()
+                {
+                    DisplayName = "*.transform",
+                    Name = "transform",
+                    IsChecked = isSitecoreProject(vsProject) && isItemInIncludesFolder(itemFolder)
+                });
+
+                currentAddTransformDlg.Closed += (EventHandler)delegate(object senders, EventArgs args)
+                {
+                    OnAddTransformDialogClosed(sender, itemFullPath, itemFolder, itemFilename, selectedProjectItem, hierarchy, buildPropertyStorage, addImports, projectFullPath, importPath);
+                };
             }
         }
 
+        /// <summary>
+        /// Checks whether the project is a sitecore project.
+        /// Useful for deciding which transform extension to use
+        /// </summary>
+        private bool isSitecoreProject(IVsProject project)
+        {
+            string projectFullPath;
+            project.GetMkDocument(VSConstants.VSITEMID_ROOT, out projectFullPath);
+            return Directory.Exists(Path.GetDirectoryName(projectFullPath) + "\\sitecore");
+        }
+
+        /// <summary>
+        /// Checks whether a given item is inside the App_Config/Include-Ordner. 
+        /// Useful for deciding which transform extension to use
+        /// </summary>
+        /// <param name="itemFolder"></param>
+        /// <returns></returns>
+        private bool isItemInIncludesFolder(string itemFolder)
+        {
+            return itemFolder.EndsWith("App_Config\\Include", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Executed when the dialog opened by OnAddTransformCommand() is closed.
+        /// Every selected transform will be created, using the selected extension
+        /// </summary>
+        void OnAddTransformDialogClosed(object sender, string itemFullPath, string itemFolder, string itemFilename, ProjectItem selectedProjectItem, IVsHierarchy hierarchy, IVsBuildPropertyStorage buildPropertyStorage, bool addImports, string projectFullPath, string importPath)
+        {
+            List<TreeViewModel> selectedTransformsToCreate = currentAddTransformDlg.TransformsList.First().Children.Where(c => c.IsChecked == true).ToList();
+
+            string selectedExtension = "." + currentAddTransformDlg.ExtensionList.Where(c => c.IsChecked).Single().Name;
+
+            string content = BuildXdtContent(itemFullPath);
+            foreach (TreeViewModel selectedTransformToCreate in selectedTransformsToCreate)
+            {
+                this.LogMessageWriteLineFormat("Error obtaining IVsBuildPropertyStorage from hierarcy.");
+                string itemName = string.Format(Resources.String_FormatTransformFilename, itemFilename, selectedTransformToCreate.Name, selectedExtension);
+                this.LogMessageWriteLineFormat("TransformationFile: " + itemName);
+                AddXdtTransformFile(selectedProjectItem, content, itemName, itemFolder);
+                uint addedFileId;
+                hierarchy.ParseCanonicalName(Path.Combine(itemFolder, itemName), out addedFileId);
+                buildPropertyStorage.SetItemAttribute(addedFileId, IsTransformFile, "True");
+            }
+
+            if (addImports)
+            {
+                // AddSlowCheetahImport(projectFullPath, importPath);
+                if (!this.InstallSlowCheetahNuGetPackage(selectedProjectItem.ContainingProject))
+                {
+                    // fall back for those who do not have Nuget installed
+                    AddSlowCheetahImport(projectFullPath, importPath);
+                }
+            }
+        }
 
         private List<string> GetPublishProfileTransforms(IVsHierarchy hierarchy,string projectPath) {
             if (hierarchy == null) { throw new ArgumentNullException("hierarchy"); }

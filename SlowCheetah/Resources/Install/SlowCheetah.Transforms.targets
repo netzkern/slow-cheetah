@@ -82,40 +82,73 @@ Copyright (C) Sayed Ibrahim Hashimi, Chuck England 2011-2013. All rights reserve
     </ItemGroup>
 
     <!-- This will handle non Link files and the second one for link files -->
+    <!-- %(Extension) -->
     <MakeDir Directories="@(_FilesToTransformNotAppConfig->'$(OutDir)%(RelativeDir)')"
              Condition="Exists('%(RelativeDir)%(Filename).$(Configuration)%(Extension)')
-             and '%(Link)'=='' " />
+                 and '%(Link)'=='' " />
+    <!-- .transform -->
+    <MakeDir Directories="@(_FilesToTransformNotAppConfig->'$(OutDir)%(RelativeDir)')"
+             Condition="Exists('%(RelativeDir)%(Filename).$(Configuration).transform')
+                 and '%(Link)'=='' " />
+    
 
     <MakeDir Directories="@(_TmpLinkFiles->'$(OutDir)%(RelativeDir)')"
                  Condition=" '%(Link)'!='' " />
 
     <!-- use Configuration transform, if it exists -->
-    <SlowCheetah.Xdt.TransformXml 
+    <!-- %(Extension) -->
+    <SlowCheetah.Xdt.TransformXml
               Source="$(_AppConfigDest)" Destination="$(_AppConfigDest)"
               Transform="@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(Configuration)%(Extension)')"
               Condition=" Exists(@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(Configuration)%(Extension)')) " />
+    <!-- .transform -->
+    <SlowCheetah.Xdt.TransformXml
+              Source="$(_AppConfigDest)" Destination="$(_AppConfigDest)"
+              Transform="@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(Configuration).transform')"
+              Condition=" Exists(@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(Configuration).transform')) " />
 
     <!-- use PublishProfile transform, if it exists -->
+    <!-- %(Extension) -->
     <SlowCheetah.Xdt.TransformXml
               Source="$(_AppConfigDest)" Destination="$(_AppConfigDest)"
               Transform="@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(PublishProfile)%(Extension)')"
               Condition=" Exists(@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(PublishProfile)%(Extension)')) " />
+    <!-- .transform -->
+    <SlowCheetah.Xdt.TransformXml
+              Source="$(_AppConfigDest)" Destination="$(_AppConfigDest)"
+              Transform="@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(PublishProfile).transform')"
+              Condition=" Exists(@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(PublishProfile).transform')) " />
+    
 
     <!-- 
     For link files this will write the transformed file into the 
     incorrect location so let's handle those seperately in the transformation underneath this one
     -->
+    <!-- %(Extension) -->
     <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'%(FullPath)')"
                   Transform="%(RelativeDir)%(Filename).$(Configuration)%(Extension)"
                   Destination="@(_FilesToTransformNotAppConfig->'$(OutDir)%(RelativeDir)%(Filename)%(Extension)')"
                   Condition=" Exists('%(RelativeDir)%(Filename).$(Configuration)%(Extension)')
                               and '%(Link)'=='' " />
+    <!-- .transform -->
+    <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'%(FullPath)')"
+                  Transform="%(RelativeDir)%(Filename).$(Configuration).transform"
+                  Destination="@(_FilesToTransformNotAppConfig->'$(OutDir)%(RelativeDir)%(Filename)%(Extension)')"
+                  Condition=" Exists('%(RelativeDir)%(Filename).$(Configuration).transform')
+                              and '%(Link)'=='' " />
 
     <!-- Transform the Link files -->
+    <!-- %(Extension) -->
     <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'%(FullPath)')"
                   Transform="%(RelativeDir)%(Filename).$(Configuration)%(Extension)"
                   Destination="@(_FilesToTransformNotAppConfig->'$(OutDir)%(Link)')"
                   Condition="Exists('%(RelativeDir)%(Filename).$(Configuration)%(Extension)')
+                              and '%(Link)'!='' " />
+    <!-- .transform -->
+    <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'%(FullPath)')"
+                  Transform="%(RelativeDir)%(Filename).$(Configuration).transform"
+                  Destination="@(_FilesToTransformNotAppConfig->'$(OutDir)%(Link)')"
+                  Condition="Exists('%(RelativeDir)%(Filename).$(Configuration).transform')
                               and '%(Link)'!='' " />
   </Target>
 
@@ -170,7 +203,7 @@ Copyright (C) Sayed Ibrahim Hashimi, Chuck England 2011-2013. All rights reserve
       <FromTarget>Project</FromTarget>
     </ExcludeFromPackageFiles>
   </ItemGroup>
-  
+
   <PropertyGroup Condition=" '$(IsWap)' == 'true' ">
     <OnAfterPipelinePreDeployCopyAllFilesToOneFolder>
       $(OnAfterPipelinePreDeployCopyAllFilesToOneFolder);
@@ -216,8 +249,13 @@ Copyright (C) Sayed Ibrahim Hashimi, Chuck England 2011-2013. All rights reserve
     </ItemGroup>
 
     <!-- This will ignore link files and the second one will handle them -->
+    <!-- %(Extension) -->
     <MakeDir Directories="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(RelativeDir)')"
          Condition="Exists('%(RelativeDir)%(Filename).$(Configuration)%(Extension)')
+                    and '%(Link)' == '' "/>
+    <!-- .transform -->
+    <MakeDir Directories="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(RelativeDir)')"
+         Condition="Exists('%(RelativeDir)%(Filename).$(Configuration).transform')
                     and '%(Link)' == '' "/>
 
     <MakeDir Directories="@(_TmpLinkFiles->'$(OutDir)%(RelativeDir)')"
@@ -225,19 +263,35 @@ Copyright (C) Sayed Ibrahim Hashimi, Chuck England 2011-2013. All rights reserve
 
     <!--Make sure that we do not do this for web.config-->
     <!-- This usage will skip Link files, the task usage below will handle Link files -->
+    <!-- %(Extension) -->
     <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'%(FullPath)')"
               Transform="%(RelativeDir)%(Filename).$(Configuration)%(Extension)"
               Destination="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(RelativeDir)%(Filename)%(Extension)')"
               Condition=" '%(Filename)%(Extension)' != 'web.config' and
                           Exists('%(RelativeDir)%(Filename).$(Configuration)%(Extension)')
                           and '%(Link)'=='' " />
+    <!-- .transform -->
+    <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'%(FullPath)')"
+              Transform="%(RelativeDir)%(Filename).$(Configuration).transform"
+              Destination="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(RelativeDir)%(Filename)%(Extension)')"
+              Condition=" '%(Filename)%(Extension)' != 'web.config' and
+                          Exists('%(RelativeDir)%(Filename).$(Configuration).transform')
+                          and '%(Link)'=='' " />
 
     <!-- Transform the Link files, they always go into the root directory -->
+    <!-- %(Extension) -->
     <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'%(FullPath)')"
               Transform="%(RelativeDir)%(Filename).$(Configuration)%(Extension)"
               Destination="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(Link)')"
               Condition=" '%(Filename)%(Extension)' != 'web.config' and
                           Exists('%(RelativeDir)%(Filename).$(Configuration)%(Extension)')
+                          and '%(Link)'!='' " />
+    <!-- .transform -->
+    <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'%(FullPath)')"
+              Transform="%(RelativeDir)%(Filename).$(Configuration).transform"
+              Destination="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(Link)')"
+              Condition=" '%(Filename)%(Extension)' != 'web.config' and
+                          Exists('%(RelativeDir)%(Filename).$(Configuration).transform')
                           and '%(Link)'!='' " />
   </Target>
 
@@ -251,19 +305,35 @@ Copyright (C) Sayed Ibrahim Hashimi, Chuck England 2011-2013. All rights reserve
 
     <!--Make sure that we do not do this for web.config-->
     <!-- This usage will skip Link files, the task usage below will handle Link files -->
+    <!-- %(Extension) -->
     <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(RelativeDir)%(Filename)%(Extension)')"
               Transform="%(RelativeDir)%(Filename).$(_WapPubProfile)%(Extension)"
               Destination="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(RelativeDir)%(Filename)%(Extension)')"
               Condition=" '%(Filename)%(Extension)' != 'web.config' and
                           Exists('%(RelativeDir)%(Filename).$(_WapPubProfile)%(Extension)')
                           and '%(Link)'=='' and '$(_WapPubProfile)'!='' and '$(_WapPubProfile)'!='$(Configuration)' " />
+    <!-- .transform -->
+    <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(RelativeDir)%(Filename)%(Extension)')"
+              Transform="%(RelativeDir)%(Filename).$(_WapPubProfile).transform"
+              Destination="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(RelativeDir)%(Filename)%(Extension)')"
+              Condition=" '%(Filename)%(Extension)' != 'web.config' and
+                          Exists('%(RelativeDir)%(Filename).$(_WapPubProfile).transform')
+                          and '%(Link)'=='' and '$(_WapPubProfile)'!='' and '$(_WapPubProfile)'!='$(Configuration)' " />
 
     <!-- Transform the Link files, they always go into the root directory -->
+    <!-- %(Extension) -->
     <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(Link)')"
               Transform="%(RelativeDir)%(Filename).$(_WapPubProfile)%(Extension)"
               Destination="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(Link)')"
               Condition=" '%(Filename)%(Extension)' != 'web.config' and
                           Exists('%(RelativeDir)%(Filename).$(_WapPubProfile)%(Extension)')
+                          and '%(Link)'!=''  and '$(_WapPubProfile)'!='' and '$(_WapPubProfile)'!='$(Configuration)' " />
+    <!-- .transform -->
+    <SlowCheetah.Xdt.TransformXml Source="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(Link)')"
+              Transform="%(RelativeDir)%(Filename).$(_WapPubProfile).transform"
+              Destination="@(_FilesToTransformNotAppConfig->'$(_PackageTempDir)\%(Link)')"
+              Condition=" '%(Filename)%(Extension)' != 'web.config' and
+                          Exists('%(RelativeDir)%(Filename).$(_WapPubProfile).transform')
                           and '%(Link)'!=''  and '$(_WapPubProfile)'!='' and '$(_WapPubProfile)'!='$(Configuration)' " />
   </Target>
 
@@ -277,15 +347,18 @@ Copyright (C) Sayed Ibrahim Hashimi, Chuck England 2011-2013. All rights reserve
           DependsOnTargets="TransformAllFiles">
     <Message Text="ScReplaceAppConfigItem" Importance="low"/>
     <PropertyGroup>
-      <_SlowCheetahAppConfigTransformExists Condition="Exists(@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(Configuration)%(Extension)'))">true</_SlowCheetahAppConfigTransformExists>
+      <!-- %(Extension) -->
+      <_SlowCheetahAppConfigTransformExistsDefaultExtension Condition="Exists(@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(Configuration)%(Extension)'))">true</_SlowCheetahAppConfigTransformExistsDefaultExtension>
+      <!-- .transform -->
+      <_SlowCheetahAppConfigTransformExistsSpecialExtension Condition="Exists(@(_AppConfigToTransform->'%(RelativeDir)%(Filename).$(Configuration).transform'))">true</_SlowCheetahAppConfigTransformExistsSpecialExtension>
     </PropertyGroup>
     <PropertyGroup>
       <_OldAppConfigWithTargetPath>%(AppConfigWithTargetPath.TargetPath)</_OldAppConfigWithTargetPath>
       <_SCNewAppConfigFile>@(AppConfigWithTargetPath->'$(IntermediateOutputPath)SlowCheetah\%(Filename)%(Extension)')</_SCNewAppConfigFile>
     </PropertyGroup>
 
-    <Copy SourceFiles="@(AppConfigWithTargetPath->'$(OutDir)%(TargetPath)')" DestinationFiles="$(_SCNewAppConfigFile)" Condition="'$(_SlowCheetahAppConfigTransformExists)'=='true'" />
-    <ItemGroup Condition="'$(_SlowCheetahAppConfigTransformExists)'=='true'">
+    <Copy SourceFiles="@(AppConfigWithTargetPath->'$(OutDir)%(TargetPath)')" DestinationFiles="$(_SCNewAppConfigFile)" Condition="'$(_SlowCheetahAppConfigTransformExistsDefaultExtension)'=='true' or '$(_SlowCheetahAppConfigTransformExistsSpecialExtension)'=='true' " />
+    <ItemGroup Condition="'$(_SlowCheetahAppConfigTransformExistsDefaultExtension)'=='true' or '$(_SlowCheetahAppConfigTransformExistsSpecialExtension)'=='true' ">
       <AppConfigWithTargetPath Remove="@(AppConfigWithTargetPath)" />
       <AppConfigWithTargetPath Include="$(_SCNewAppConfigFile)">
         <TargetPath>$(_OldAppConfigWithTargetPath)</TargetPath>

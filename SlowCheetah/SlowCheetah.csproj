@@ -74,6 +74,8 @@
       <HintPath>..\packages\NuGet.VisualStudio.2.2.0\lib\net40\NuGet.VisualStudio.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="SlowCheetah.Xdt">
       <HintPath>..\packages\SlowCheetah.Xdt.1.1.1-beta\lib\SlowCheetah.Xdt.dll</HintPath>
     </Reference>
@@ -83,11 +85,13 @@
     <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="VSLangProj, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <COMReference Include="EnvDTE">
@@ -146,6 +150,9 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddTransformsDialog.xaml.cs">
+      <DependentUpon>AddTransformsDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Exceptions\SlowCheetahCustomException.cs" />
     <Compile Include="OptionsDialogPage.cs">
       <SubType>Component</SubType>
@@ -239,6 +246,12 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <Content Include="Resources\Package.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="AddTransformsDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <PropertyGroup>
     <UseCodebase>true</UseCodebase>
